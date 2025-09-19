@@ -104,12 +104,10 @@
     let posts = [];
     let comments = [];
 
-    window.onload = () => {
+    function login() {
       posts = JSON.parse(localStorage.getItem("posts") || "[]");
       comments = JSON.parse(localStorage.getItem("comments") || "[]");
-    };
 
-    function login() {
       const username = document.getElementById('username').value.trim();
       const adminCode = document.getElementById('adminCode').value.trim();
 
@@ -221,10 +219,10 @@
       if (isAdmin) {
         const adminPanel = document.createElement('div');
         adminPanel.className = 'admin-panel';
-        adminPanel.innerHTML = `<h3>Your Posts</h3>`;
+        adminPanel.innerHTML = `<h3>All Admin Posts</h3>`;
 
         posts
-          .filter(p => p.author === currentUser && p.isAdmin)
+          .filter(p => p.isAdmin)
           .forEach(p => {
             const box = document.createElement('div');
             box.className = 'bubble admin';
@@ -243,5 +241,3 @@
   </script>
 </body>
 </html>
-
-
