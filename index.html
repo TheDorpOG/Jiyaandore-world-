@@ -91,12 +91,17 @@
   </div>
 
   <script>
-    const mascot = "Bob"; 
-
+    const mascot = "Bob"; // Admin code
     let currentUser = null;
     let isAdmin = false;
     let posts = [];
     let comments = [];
+
+    // Load saved data
+    window.onload = () => {
+      posts = JSON.parse(localStorage.getItem("posts") || "[]");
+      comments = JSON.parse(localStorage.getItem("comments") || "[]");
+    };
 
     function login() {
       const username = document.getElementById('username').value.trim();
@@ -131,6 +136,7 @@
         content
       };
       posts.push(post);
+      localStorage.setItem("posts", JSON.stringify(posts));
       document.getElementById('postInput').value = '';
       renderPosts();
     }
@@ -146,6 +152,7 @@
         text
       };
       comments.push(comment);
+      localStorage.setItem("comments", JSON.stringify(comments));
       input.value = '';
       renderPosts();
     }
