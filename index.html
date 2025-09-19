@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Q&A Chat</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      padding: 2em;
+    }
+    h1 {
+      text-align: center;
+    }
+    #login, #chat {
+      max-width: 700px;
+      margin: auto;
+      margin-bottom: 2em;
+    }
+    .bubble {
+      background: #fff;
+      padding: 1em;
+      margin: 0.5em 0;
+      border-radius: 10px;
+      position: relative;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .bubble::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 20px;
+      width: 0;
+      height: 0;
+      border: 10px solid transparent;
+      border-top-color: #fff;
+      border-bottom: 0;
+      margin-left: -10px;
+      margin-bottom: -10px;
+    }
+    .admin {
+      background: #ffeeba;
+      border-left: 4px solid #f0ad4e;
+    }
+    .admin::after {
+      border-top-color: #ffeeba;
+    }
+    .username {
+      font-weight: bold;
+      margin-bottom: 0.5em;
+      display: block;
+    }
+    input, button, textarea {
+      padding: 0.5em;
+      margin: 0.5em 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .post {
+      margin-bottom: 2em;
+      padding: 1em;
+      background: #e9f7ff;
+      border-left: 4px solid #5bc0de;
+      border-radius: 8px;
+    }
+    .comments {
+      margin-top: 1em;
+      padding-left: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Q&A Chat</h1>
+
+  <div id="login">
+    <input type="text" id="username" placeholder="Enter your username" />
+    <input type="text" id="adminCode" placeholder="Enter admin code (optional)" />
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div id="chat" style="display:none;">
+    <h2>Welcome, <span id="userDisplay"></span></h2>
+
+    <div id="adminPostArea" style="display:none;">
+      <textarea id="postInput" placeholder="Create a new post (admin only)..."></textarea>
+      <button onclick="createPost()">Post</button>
+    </div>
+
+    <div id="posts"></div>
+  </div>
+
+  <script>
+    const mascot = "Bob"; 
+
+    let currentUser = null;
+    let isAdmin = false;
+    let posts = [];
+    let comments = [];
+
+    function login() {
+      const username = document.getElementById('username').value.trim();
+      const adminCode = document.getElementById('adminCode').value.trim();
+
+      if (!username) {
+        alert("Please enter a username.");
+        return;
+      }
+
+      currentUser = username;
+      isAdmin = adminCode === mascot;
+
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('chat').style.display = 'block';
+      document.getElementById('userDisplay').textContent = `${currentUser}${isAdmin ? " (Admin)" : ""}`;
+
+      if (isAdmin) {
+        document.getElementById('adminPostArea').style.display = 'block';
+      }
+
+      renderPosts();
+    }
+
+    function createPost() {
+      const content = document.getElementById('postInput').value.trim();
+      if (!content) return;
+
+      const post = {
+        id: Date.now(),
+        author: currentUser,
+        content
+      };
+      posts.push(post);
+      document.getElementById('postInput').value = '';
+      renderPosts();
+    }
+
+    function addComment(postId) {
+      const input = document.getElementById(`commentInput-${postId}`);
+      const text = input.value.trim();
+      if (!text) return;
+
+      const comment = {
+        postId,
+        author: currentUser,
+        text
+      };
+      comments.push(comment);
+      input.value = '';
+      renderPosts();
+    }
+
+    function renderPosts() {
+      const container = document.getElementById('posts');
+      container.innerHTML = '';
+
+      posts.forEach(post => {
+        const postDiv = document.createElement('div');
+        postDiv.className = 'post';
+        postDiv.innerHTML = `<strong>${post.author} (Admin):</strong><p>${post.content}</p>`;
+
+        const commentSection = document.createElement('div');
+        commentSection.className = 'comments';
+
+        comments
+          .filter(c => c.postId === post.id)
+          .forEach(c => {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerHTML = `<span class="username">${c.author}</span>${c.text}`;
+            commentSection.appendChild(bubble);
+          });
+
+        if (!isAdmin) {
+          const commentInput = document.createElement('textarea');
+          commentInput.id = `commentInput-${post.id}`;
+          commentInput.placeholder = "Add a comment...";
+          const commentBtn = document.createElement('button');
+          commentBtn.textContent = "Comment";
+          commentBtn.onclick = () => addComment(post.id);
+          commentSection.appendChild(commentInput);
+          commentSection.appendChild(commentBtn);
+        }
+
+        postDiv.appendChild(commentSection);
+        container.appendChild(postDiv);
+      });
+    }
+  </script>
+</body>
+</html>
