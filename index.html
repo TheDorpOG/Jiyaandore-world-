@@ -98,13 +98,12 @@
   </div>
 
   <script>
-    const mascot = "Bob"; // Admin code
+    const mascot = "Bob";
     let currentUser = null;
     let isAdmin = false;
     let posts = [];
     let comments = [];
 
-    // Load saved data
     window.onload = () => {
       posts = JSON.parse(localStorage.getItem("posts") || "[]");
       comments = JSON.parse(localStorage.getItem("comments") || "[]");
