@@ -192,6 +192,15 @@
         postDiv.appendChild(commentSection);
         container.appendChild(postDiv);
       });
+      window.onload = () => {
+  posts = JSON.parse(localStorage.getItem("posts") || "[]");
+  comments = JSON.parse(localStorage.getItem("comments") || "[]");
+  if (posts.length > 0) {
+    document.getElementById('chat').style.display = 'block';
+    renderPosts();
+  }
+};
+
     }
   </script>
 </body>
