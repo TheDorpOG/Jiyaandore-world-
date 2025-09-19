@@ -68,6 +68,13 @@
       margin-top: 1em;
       padding-left: 1em;
     }
+    .admin-panel {
+      background: #fff3cd;
+      padding: 1em;
+      margin-top: 2em;
+      border-radius: 8px;
+      border-left: 4px solid #ffc107;
+    }
   </style>
 </head>
 <body>
@@ -133,7 +140,8 @@
       const post = {
         id: Date.now(),
         author: currentUser,
-        content
+        content,
+        isAdmin: true
       };
       posts.push(post);
       localStorage.setItem("posts", JSON.stringify(posts));
@@ -154,6 +162,24 @@
       comments.push(comment);
       localStorage.setItem("comments", JSON.stringify(comments));
       input.value = '';
+      renderPosts();
+    }
+
+    function updatePost(id) {
+      const newContent = document.getElementById(`edit-${id}`).value.trim();
+      const index = posts.findIndex(p => p.id === id);
+      if (index !== -1) {
+        posts[index].content = newContent;
+        localStorage.setItem("posts", JSON.stringify(posts));
+        renderPosts();
+      }
+    }
+
+    function deletePost(id) {
+      posts = posts.filter(p => p.id !== id);
+      comments = comments.filter(c => c.postId !== id);
+      localStorage.setItem("posts", JSON.stringify(posts));
+      localStorage.setItem("comments", JSON.stringify(comments));
       renderPosts();
     }
 
@@ -192,16 +218,30 @@
         postDiv.appendChild(commentSection);
         container.appendChild(postDiv);
       });
-      window.onload = () => {
-  posts = JSON.parse(localStorage.getItem("posts") || "[]");
-  comments = JSON.parse(localStorage.getItem("comments") || "[]");
-  if (posts.length > 0) {
-    document.getElementById('chat').style.display = 'block';
-    renderPosts();
-  }
-};
 
+      if (isAdmin) {
+        const adminPanel = document.createElement('div');
+        adminPanel.className = 'admin-panel';
+        adminPanel.innerHTML = `<h3>Your Posts</h3>`;
+
+        posts
+          .filter(p => p.author === currentUser && p.isAdmin)
+          .forEach(p => {
+            const box = document.createElement('div');
+            box.className = 'bubble admin';
+            box.innerHTML = `
+              <span class="username">${p.author}</span>
+              <textarea id="edit-${p.id}">${p.content}</textarea>
+              <button onclick="updatePost(${p.id})">Update</button>
+              <button onclick="deletePost(${p.id})">Delete</button>
+            `;
+            adminPanel.appendChild(box);
+          });
+
+        container.appendChild(adminPanel);
+      }
     }
   </script>
 </body>
 </html>
+
