@@ -3,241 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Q&A Chat</title>
+  <title>Jiyaandore Q&A</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background: #f0f0f0;
-      padding: 2em;
-    }
-    h1 {
-      text-align: center;
-    }
-    #login, #chat {
-      max-width: 700px;
-      margin: auto;
-      margin-bottom: 2em;
-    }
-    .bubble {
-      background: #fff;
-      padding: 1em;
-      margin: 0.5em 0;
-      border-radius: 10px;
-      position: relative;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .bubble::after {
-      content: "";
+    body { font-family: sans-serif; padding: 2em; background: #f9f9f9; }
+    h1 { color: #333; }
+    .post { background: #fff; padding: 1em; margin-bottom: 1em; border-radius: 5px; box-shadow: 0 0 5px #ccc; position: relative; }
+    .admin { border-left: 5px solid #ff9800; }
+    .admin::before {
+      content: "admin dudes";
       position: absolute;
-      bottom: 0;
-      left: 20px;
-      width: 0;
-      height: 0;
-      border: 10px solid transparent;
-      border-top-color: #fff;
-      border-bottom: 0;
-      margin-left: -10px;
-      margin-bottom: -10px;
+      top: -10px;
+      right: 10px;
+      background: #ff9800;
+      color: white;
+      padding: 2px 6px;
+      font-size: 0.8em;
+      border-radius: 3px;
     }
-    .admin {
-      background: #ffeeba;
-      border-left: 4px solid #f0ad4e;
-    }
-    .admin::after {
-      border-top-color: #ffeeba;
-    }
-    .username {
-      font-weight: bold;
-      margin-bottom: 0.5em;
-      display: block;
-    }
-    input, button, textarea {
-      padding: 0.5em;
-      margin: 0.5em 0;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .post {
-      margin-bottom: 2em;
-      padding: 1em;
-      background: #e9f7ff;
-      border-left: 4px solid #5bc0de;
-      border-radius: 8px;
-    }
-    .comments {
-      margin-top: 1em;
-      padding-left: 1em;
-    }
-    .admin-panel {
-      background: #fff3cd;
-      padding: 1em;
-      margin-top: 2em;
-      border-radius: 8px;
-      border-left: 4px solid #ffc107;
-    }
+    .comment { margin-left: 1em; padding: 0.5em; background: #eee; border-radius: 3px; margin-top: 0.5em; }
+    textarea, input[type="text"] { width: 100%; margin-top: 0.5em; }
+    button { padding: 0.5em 1em; margin-top: 0.5em; }
+    .meta { font-size: 0.9em; color: #666; margin-bottom: 0.5em; }
   </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js"></script>
 </head>
 <body>
-  <h1>Q&A Chat</h1>
+  <h1>Jiyaandore Q&A</h1>
 
-  <div id="login">
-    <input type="text" id="username" placeholder="Enter your username" />
-    <input type="text" id="adminCode" placeholder="Enter admin code (optional)" />
-    <button onclick="login()">Login</button>
+  <div>
+    <input type="text" id="author" placeholder="Your name" />
+    <textarea id="content" placeholder="Ask or answer something..."></textarea>
+    <button onclick="submitPost()">Submit</button>
   </div>
 
-  <div id="chat" style="display:none;">
-    <h2>Welcome, <span id="userDisplay"></span></h2>
-
-    <div id="adminPostArea" style="display:none;">
-      <textarea id="postInput" placeholder="Create a new post (admin only)..."></textarea>
-      <button onclick="createPost()">Post</button>
-    </div>
-
-    <div id="posts"></div>
-  </div>
+  <hr />
+  <div id="posts"></div>
 
   <script>
-    const mascot = "Bob";
-    let currentUser = null;
-    let isAdmin = false;
-    let posts = [];
-    let comments = [];
+    const firebaseConfig = {
+      apiKey: "AIzaSyCwS76bPU_RjSm8uyWrd2s-BSNhLXsfG7M",
+      authDomain: "jiyaandore-site.firebaseapp.com",
+      projectId: "jiyaandore-site",
+      storageBucket: "jiyaandore-site.firebasestorage.app",
+      messagingSenderId: "780855363206",
+      appId: "1:780855363206:web:f0282c6297ebdb1dad3307",
+      measurementId: "G-MSQGBL8S3E"
+    };
 
-    function login() {
-      posts = JSON.parse(localStorage.getItem("posts") || "[]");
-      comments = JSON.parse(localStorage.getItem("comments") || "[]");
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-      const username = document.getElementById('username').value.trim();
-      const adminCode = document.getElementById('adminCode').value.trim();
+    const adminUsernames = ["Jiyaandore1", "Jiyaandore 2"];
 
-      if (!username) {
-        alert("Please enter a username.");
-        return;
-      }
+    async function submitPost() {
+      const author = document.getElementById("author").value.trim();
+      const content = document.getElementById("content").value.trim();
+      if (!author || !content) return alert("Fill in both fields!");
 
-      currentUser = username;
-      isAdmin = adminCode === mascot;
+      const isAdmin = adminUsernames.includes(author);
 
-      document.getElementById('login').style.display = 'none';
-      document.getElementById('chat').style.display = 'block';
-      document.getElementById('userDisplay').textContent = `${currentUser}${isAdmin ? " (Admin)" : ""}`;
-
-      if (isAdmin) {
-        document.getElementById('adminPostArea').style.display = 'block';
-      }
-
-      renderPosts();
-    }
-
-    function createPost() {
-      const content = document.getElementById('postInput').value.trim();
-      if (!content) return;
-
-      const post = {
-        id: Date.now(),
-        author: currentUser,
+      await db.collection("posts").add({
+        author,
         content,
-        isAdmin: true
-      };
-      posts.push(post);
-      localStorage.setItem("posts", JSON.stringify(posts));
-      document.getElementById('postInput').value = '';
-      renderPosts();
-    }
-
-    function addComment(postId) {
-      const input = document.getElementById(`commentInput-${postId}`);
-      const text = input.value.trim();
-      if (!text) return;
-
-      const comment = {
-        postId,
-        author: currentUser,
-        text
-      };
-      comments.push(comment);
-      localStorage.setItem("comments", JSON.stringify(comments));
-      input.value = '';
-      renderPosts();
-    }
-
-    function updatePost(id) {
-      const newContent = document.getElementById(`edit-${id}`).value.trim();
-      const index = posts.findIndex(p => p.id === id);
-      if (index !== -1) {
-        posts[index].content = newContent;
-        localStorage.setItem("posts", JSON.stringify(posts));
-        renderPosts();
-      }
-    }
-
-    function deletePost(id) {
-      posts = posts.filter(p => p.id !== id);
-      comments = comments.filter(c => c.postId !== id);
-      localStorage.setItem("posts", JSON.stringify(posts));
-      localStorage.setItem("comments", JSON.stringify(comments));
-      renderPosts();
-    }
-
-    function renderPosts() {
-      const container = document.getElementById('posts');
-      container.innerHTML = '';
-
-      posts.forEach(post => {
-        const postDiv = document.createElement('div');
-        postDiv.className = 'post';
-        postDiv.innerHTML = `<strong>${post.author} (Admin):</strong><p>${post.content}</p>`;
-
-        const commentSection = document.createElement('div');
-        commentSection.className = 'comments';
-
-        comments
-          .filter(c => c.postId === post.id)
-          .forEach(c => {
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            bubble.innerHTML = `<span class="username">${c.author}</span>${c.text}`;
-            commentSection.appendChild(bubble);
-          });
-
-        if (!isAdmin) {
-          const commentInput = document.createElement('textarea');
-          commentInput.id = `commentInput-${post.id}`;
-          commentInput.placeholder = "Add a comment...";
-          const commentBtn = document.createElement('button');
-          commentBtn.textContent = "Comment";
-          commentBtn.onclick = () => addComment(post.id);
-          commentSection.appendChild(commentInput);
-          commentSection.appendChild(commentBtn);
-        }
-
-        postDiv.appendChild(commentSection);
-        container.appendChild(postDiv);
+        isAdmin,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      if (isAdmin) {
-        const adminPanel = document.createElement('div');
-        adminPanel.className = 'admin-panel';
-        adminPanel.innerHTML = `<h3>All Admin Posts</h3>`;
-
-        posts
-          .filter(p => p.isAdmin)
-          .forEach(p => {
-            const box = document.createElement('div');
-            box.className = 'bubble admin';
-            box.innerHTML = `
-              <span class="username">${p.author}</span>
-              <textarea id="edit-${p.id}">${p.content}</textarea>
-              <button onclick="updatePost(${p.id})">Update</button>
-              <button onclick="deletePost(${p.id})">Delete</button>
-            `;
-            adminPanel.appendChild(box);
-          });
-
-        container.appendChild(adminPanel);
-      }
+      document.getElementById("content").value = "";
     }
+
+    function renderPosts(posts) {
+      const container = document.getElementById("posts");
+      container.innerHTML = "";
+      posts.forEach(post => {
+        const div = document.createElement("div");
+        div.className = "post" + (post.isAdmin ? " admin" : "");
+        const time = post.timestamp?.toDate().toLocaleString() || "just now";
+        div.innerHTML = `
+          <div class="meta"><strong>${post.author}</strong> • ${time}</div>
+          <div>${post.content}</div>
+          <div id="comments-${post.id}"></div>
+          <textarea id="comment-${post.id}" placeholder="Add a comment..."></textarea>
+          <button onclick="submitComment('${post.id}')">Comment</button>
+        `;
+        container.appendChild(div);
+        loadComments(post.id);
+      });
+    }
+
+    async function submitComment(postId) {
+      const commentBox = document.getElementById(`comment-${postId}`);
+      const text = commentBox.value.trim();
+      if (!text) return;
+
+      await db.collection("comments").add({
+        postId,
+        text,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      commentBox.value = "";
+    }
+
+    function loadComments(postId) {
+      db.collection("comments")
+        .where("postId", "==", postId)
+        .orderBy("timestamp")
+        .onSnapshot(snapshot => {
+          const container = document.getElementById(`comments-${postId}`);
+          container.innerHTML = "";
+          snapshot.forEach(doc => {
+            const comment = doc.data();
+            const time = comment.timestamp?.toDate().toLocaleString() || "just now";
+            const div = document.createElement("div");
+            div.className = "comment";
+            div.innerHTML = `<div class="meta">${time}</div>${comment.text}`;
+            container.appendChild(div);
+          });
+        });
+    }
+
+    db.collection("posts").orderBy("timestamp").onSnapshot(snapshot => {
+      const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderPosts(posts);
+    });
   </script>
 </body>
 </html>
