@@ -26,9 +26,9 @@
     .meta { font-size: 0.9em; color: #666; margin-bottom: 0.5em; }
   </style>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js"></script>
+  <!-- Firebase SDKs (compat builds for browser) -->
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <h1>Jiyaandore Q&A</h1>
@@ -43,6 +43,7 @@
   <div id="posts"></div>
 
   <script>
+    // ✅ Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCwS76bPU_RjSm8uyWrd2s-BSNhLXsfG7M",
       authDomain: "jiyaandore-site.firebaseapp.com",
@@ -53,11 +54,14 @@
       measurementId: "G-MSQGBL8S3E"
     };
 
+    // ✅ Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // ✅ Admins
     const adminUsernames = ["Jiyaandore1", "Jiyaandore 2"];
 
+    // ✅ Submit post
     async function submitPost() {
       const author = document.getElementById("author").value.trim();
       const content = document.getElementById("content").value.trim();
@@ -65,16 +69,21 @@
 
       const isAdmin = adminUsernames.includes(author);
 
-      await db.collection("posts").add({
-        author,
-        content,
-        isAdmin,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      document.getElementById("content").value = "";
+      try {
+        await db.collection("posts").add({
+          author,
+          content,
+          isAdmin,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById("content").value = "";
+      } catch (err) {
+        console.error("Submit error:", err);
+        alert("Failed to submit post.");
+      }
     }
 
+    // ✅ Render posts
     function renderPosts(posts) {
       const container = document.getElementById("posts");
       container.innerHTML = "";
@@ -94,20 +103,26 @@
       });
     }
 
+    // ✅ Submit comment
     async function submitComment(postId) {
       const commentBox = document.getElementById(`comment-${postId}`);
       const text = commentBox.value.trim();
       if (!text) return;
 
-      await db.collection("comments").add({
-        postId,
-        text,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      commentBox.value = "";
+      try {
+        await db.collection("comments").add({
+          postId,
+          text,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        commentBox.value = "";
+      } catch (err) {
+        console.error("Comment error:", err);
+        alert("Failed to submit comment.");
+      }
     }
 
+    // ✅ Load comments
     function loadComments(postId) {
       db.collection("comments")
         .where("postId", "==", postId)
@@ -126,6 +141,7 @@
         });
     }
 
+    // ✅ Real-time post updates
     db.collection("posts").orderBy("timestamp").onSnapshot(snapshot => {
       const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       renderPosts(posts);
@@ -133,3 +149,4 @@
   </script>
 </body>
 </html>
+
